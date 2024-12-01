@@ -46,144 +46,43 @@ class camadaFisica:
     #Modulação por portadora
     #Frequência default da portadora: 5kHz
     #Quantidade default de amostras do sinal: 100000
-    def ask(self, dig_signal, f=10000, sample=1000,h=0):
+    def ask(self, dig_signal, a1=1,a2=1.5, sample=100,h=0):
         if len(dig_signal)==0:
             return []
-        if len(dig_signal)>=400:
-            Signal=[]
-            part_length = len(dig_signal) // 6
-
-            # Calculate any remaining characters after dividing into 4 parts
-            remainder = len(dig_signal) % 6
-
-            # Initialize a list to store the 4 parts
-            parts = []
-            start = 0
-
-            for i in range(6):
-                # If there are remaining characters, add one extra to the current part
-                end = start + part_length + (1 if i < remainder else 0)
-
-                # Append the current part to the list of parts
-                parts.append(dig_signal[start:end])
-
-                # Update the start index for the next part
-                start = end
-            for i in range(len(parts)):
-                dig_signal=parts[i]
-                #Calcula o número de amostras por bit, baseado no número total de amostras e no comprimento do sinal digital
-                samples_per_bit = sample // len(dig_signal)
-                signal = []
-                if h==1:
-                    n=100
-                else:
-                    n=1
-                #Modula a onda portadora com base nos bits de dados
-                for bit in dig_signal:
-                    for j in range(samples_per_bit):
-                        #Calcula o tempo atual como uma fração do número total de amostras
-                        time = j / sample
-
-                        #Se o bit é 1, adiciona uma onda senoidal à lista de sinais
-                        if bit == 1:
-                            signal.append(sin(2 * pi * f * time)*19000000000*len(dig_signal)*n)
-                        else:
-                            #Se o bit é 0, adiciona zero à lista de sinais (amplitude zero para o bit 0)
-                            signal.append(0)
-                Signal=Signal+signal
-            return Signal
-
-        else:    
-            #Calcula o número de amostras por bit, baseado no número total de amostras e no comprimento do sinal digital
-            samples_per_bit = sample // len(dig_signal)
-            signal = []
-
-            #Modula a onda portadora com base nos bits de dados
-            for bit in dig_signal:
-                for j in range(samples_per_bit):
-                    #Calcula o tempo atual como uma fração do número total de amostras
-                    time = j / sample
-
-                    #Se o bit é 1, adiciona uma onda senoidal à lista de sinais
-                    if bit == 1:
-                        signal.append(sin(2 * pi * f * time)*190000000000*len(dig_signal))
-                    else:
-                        #Se o bit é 0, adiciona zero à lista de sinais (amplitude zero para o bit 0)
-                        signal.append(0)
-
-            #Retorna o sinal modulado
-            return signal
-
-    def fsk(self,dig_signal, f1=1000, f2=10000, sample=1000,h=0):
-        if len(dig_signal)==0:
-            return []
-        if len(dig_signal)>100:
-            Signal=[]
-            part_length = len(dig_signal) // 6
-
-            # Calculate any remaining characters after dividing into 4 parts
-            remainder = len(dig_signal) % 6
-
-            # Initialize a list to store the 4 parts
-            parts = []
-            start = 0
-
-            for i in range(6):
-                # If there are remaining characters, add one extra to the current part
-                end = start + part_length + (1 if i < remainder else 0)
-
-                # Append the current part to the list of parts
-                parts.append(dig_signal[start:end])
-
-                # Update the start index for the next part
-                start = end
-            for i in range(len(parts)):
-                dig_signal=parts[i]
-                #Calcula o número de amostras por bit, baseado no número total de amostras e no comprimento do sinal digital
-                samples_per_bit = sample // len(dig_signal)
-                signal = []
-                if h==1:
-                    n=10
-                else:
-                    n=1
-                #Itera sobre cada bit no sinal digital
-                for bit in dig_signal:
-                    #Para cada bit, gera uma sequência de amostras
-                    for j in range(samples_per_bit):
-                        #Calcula o tempo atual como uma fração do número total de amostras
-                        time = j / sample
-
-                        #Se o bit é 1, usa a frequência f2 para gerar a onda senoidal
-                        if bit == 1:
-                            signal.append(sin(2 * pi * f2 * time)*190000000000*len(dig_signal)*n)
-                        else:
-                            #Se o bit é 0, usa a frequência f1 para gerar a onda senoidal
-                            signal.append(sin(2 * pi * f1 * time)*190000000000*len(dig_signal)*n)
-                Signal=Signal+signal
-            return Signal
-
         else:
-            #Calcula o número de amostras por bit, baseado no número total de amostras e no comprimento do sinal digital
-            samples_per_bit = sample // len(dig_signal)
-            signal = []
-
-            #Itera sobre cada bit no sinal digital
-            for bit in dig_signal:
-                #Para cada bit, gera uma sequência de amostras
-                for j in range(samples_per_bit):
-                    #Calcula o tempo atual como uma fração do número total de amostras
-                    time = j / sample
-
-                    #Se o bit é 1, usa a frequência f2 para gerar a onda senoidal
-                    if bit == 1:
-                        signal.append(sin(2 * pi * f2 * time)*170000000000*len(dig_signal))
+            signal=[]
+            for i in range(len(dig_signal)):
+                for j in range(sample):
+                    if h==0:
+                        if dig_signal[i]=='1' or dig_signal[i]==1 or dig_signal[i]==-1:
+                            signal.append((sin((2 * pi +j)* 100)*a1))
+                        elif dig_signal[i]=='0' or dig_signal[i]==0:
+                            signal.append(sin((2 * pi + j)* 100)*a2)
                     else:
-                        #Se o bit é 0, usa a frequência f1 para gerar a onda senoidal
-                        signal.append(sin(2 * pi * f1 * time)*170000000000*len(dig_signal))
+                        if dig_signal[i]==-1:
+                            signal.append((sin((2 * pi +j)* 100)*a1))
+                        elif dig_signal[i]==1:
+                            signal.append(sin((2 * pi + j)* 100)*a2)
+            return signal    
 
-            #Retorna o sinal modulado
-            return signal
-
+    def fsk(self,dig_signal, f1=50, f2=100, sample=100,h=0):
+        if len(dig_signal)==0:
+            return []
+        else:
+            signal=[]
+            for i in range(len(dig_signal)):
+                for j in range(sample):
+                    if h==0:
+                        if dig_signal[i]=='1' or dig_signal[i]==1 or dig_signal[i]==-1:
+                            signal.append((sin((2 * pi *j)* f1)))
+                        elif dig_signal[i]=='0' or dig_signal[i]==0:
+                            signal.append(sin((2 * pi + j)* f2))
+                    else:
+                        if dig_signal[i]==-1:
+                            signal.append((sin((2 * pi *j)* f1)))
+                        elif dig_signal[i]==1:
+                            signal.append(sin((2 * pi + j)* f2))
+            return signal                    
     def qam_mapping(self,dig_signal):
         #Define o mapeamento dos bits para símbolos QAM (8-QAM neste caso)
 
@@ -205,7 +104,7 @@ class camadaFisica:
             symbols.append(symbol_map[bits])
         return symbols
 
-    def qam8_modulation(self,dig_signal, sample=500):
+    def qam8_modulation(self,dig_signal, sample=100):
         #Troca -1 por 0 para permitir o mapeamento na constelação QAM
         if isinstance(dig_signal,str)!=True:
             sinal=''
@@ -215,77 +114,10 @@ class camadaFisica:
                     char="0"
                 sinal=sinal+char
             dig_signal=sinal
-        if len(dig_signal)>500:
-            Signal=[]
-            part_length = len(dig_signal) // 6
-
-            # Calculate any remaining characters after dividing into 4 parts
-            remainder = len(dig_signal) % 6
-
-            # Initialize a list to store the 4 parts
-            parts = []
-            start = 0
-
-            for i in range(6):
-                # If there are remaining characters, add one extra to the current part
-                end = start + part_length + (1 if i < remainder else 0)
-
-                # Append the current part to the list of parts
-                parts.append(dig_signal[start:end])
-
-                # Update the start index for the next part
-                start = end
-            for i in range(len(parts)):
-                dig_signal=parts[i]
-                if (int(len(dig_signal))%3!=0):
-                    while (int(len(dig_signal))%3!=0):
-                        dig_signal=dig_signal+"0"
-                        print("numero nao multiplo de 3")
-                dig_signal = [0 if x == -1 else x for x in dig_signal]
-                #Mapeia o sinal digital para símbolos QAM usando a função qam_mapping
-                symbols = self.qam_mapping(dig_signal)
-                if symbols!=[]:
-                #Calcula o número de amostras por símbolo
-                    samples_per_symbol = sample // len(symbols)
-                else:
-                    samples_per_symbol =0
-                signal = []
-                #Gera o sinal modulador para cada símbolo
-                for symbol in symbols:
-                    I, Q = symbol
-                    for j in range(samples_per_symbol):
-                        #Calcula o tempo atual como uma fração do número total de amostras
-                        time = j / sample
-                        #Calcula o valor do sinal modulador para a amostra atual
-                        signal.append(I * cos(2 * pi * time) + Q * sin(2 * pi * time))
-                Signal=Signal+signal
-            return Signal
-
-        else:
-            if (int(len(dig_signal))%3!=0):
-                while (int(len(dig_signal))%3!=0):
-                    dig_signal=dig_signal+"0"
-                    print("numero nao multiplo de 3")
-            dig_signal = [0 if x == -1 else x for x in dig_signal]
-
-            #Mapeia o sinal digital para símbolos QAM usando a função qam_mapping
-            symbols = self.qam_mapping(dig_signal)
-            if symbols!=[]:
-            #Calcula o número de amostras por símbolo
-                samples_per_symbol = sample // len(symbols)
-            else:
-                samples_per_symbol =0
-            signal = []
-
-            #Gera o sinal modulador para cada símbolo
-            for symbol in symbols:
-                I, Q = symbol
-                for j in range(samples_per_symbol):
-                    #Calcula o tempo atual como uma fração do número total de amostras
-                    time = j / sample
-                    #Calcula o valor do sinal modulador para a amostra atual
-                    signal.append(I * cos(2 * pi * time) + Q * sin(2 * pi * time))
-
-            #Retorna o sinal modulado
-            return signal
+        symbols=self.qam_mapping(dig_signal)
+        signal=[]
+        for symbol in symbols:
+            for i in range(sample):
+                signal.append(symbol[0] * cos(2 * pi+i/2) + symbol[0] * sin(2 * pi +i/2))
+        return signal
 
