@@ -65,22 +65,22 @@ class camadaFisica:
                             signal.append(sin((2 * pi + j)* 100)*a2)
             return signal    
 
-    def fsk(self,dig_signal, f1=50, f2=100, sample=100,h=0):
+    def fsk(self,dig_signal, f1=10, f2=200, sample=200,h=0):
         if len(dig_signal)==0:
             return []
         else:
             signal=[]
-            for i in range(len(dig_signal)):
+            for bit in dig_signal:
                 for j in range(sample):
                     if h==0:
-                        if dig_signal[i]=='1' or dig_signal[i]==1 or dig_signal[i]==-1:
-                            signal.append((sin((2 * pi *j)* f1)))
-                        elif dig_signal[i]=='0' or dig_signal[i]==0:
+                        if bit=='1' or bit==1 or bit==-1:
+                            signal.append((sin((2 * pi +j)* f1)))
+                        elif bit=='0' or bit==0:
                             signal.append(sin((2 * pi + j)* f2))
                     else:
-                        if dig_signal[i]==-1:
-                            signal.append((sin((2 * pi *j)* f1)))
-                        elif dig_signal[i]==1:
+                        if bit==-1:
+                            signal.append((sin((2 * pi +j)* f1)))
+                        elif bit==1:
                             signal.append(sin((2 * pi + j)* f2))
             return signal                    
     def qam_mapping(self,dig_signal):
@@ -104,7 +104,7 @@ class camadaFisica:
             symbols.append(symbol_map[bits])
         return symbols
 
-    def qam8_modulation(self,dig_signal, sample=100):
+    def qam8_modulation(self,dig_signal, sample=200):
         #Troca -1 por 0 para permitir o mapeamento na constelação QAM
         if isinstance(dig_signal,str)!=True:
             sinal=''
@@ -114,10 +114,12 @@ class camadaFisica:
                     char="0"
                 sinal=sinal+char
             dig_signal=sinal
+        if len(dig_signal)%3!=0:
+            dig_signal=dig_signal+"0"
         symbols=self.qam_mapping(dig_signal)
         signal=[]
         for symbol in symbols:
             for i in range(sample):
-                signal.append(symbol[0] * cos(2 * pi+i/2) + symbol[0] * sin(2 * pi +i/2))
+                signal.append(symbol[0] * cos(2 * pi+i/2) + symbol[1] * sin(2 * pi +i/2))
         return signal
 

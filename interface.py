@@ -3,6 +3,7 @@ from tkinter import ttk
 import math
 import threading
 from camada_fisica import camadaFisica
+import decoder
 
 
 class INTERFACE:
@@ -79,6 +80,10 @@ class INTERFACE:
     def bitstream_set(self):
         self.Bitstream.set(str(self.Bitstream_textBox.get("1.0", tk.END).strip()))
         print(self.Bitstream.get())
+        decode=decoder.camadaFisicaDecoder()
+        bites=decode.decode(Protocolos=self.ProtocoloFisicaPort,sinal=self.decoding_wave)
+        bites=decode.decode(Protocolos=self.ProtocoloFisica,sinal=bites)
+        print(bites)
         self.draw_sine_wave()
     
     def on_resize(self,event):
@@ -121,30 +126,30 @@ class INTERFACE:
         self.draw_sine_wave()
     def draw_sine_wave(self):
         self.canvas.delete("lines")
-        ProtocoloFisica=str(self.fisica_item.get())
-        ProtocoloEnlace=str(self.enlace_item.get())
+        self.ProtocoloFisica=str(self.fisica_item.get())
+        self.ProtocoloEnlace=str(self.enlace_item.get())
         wave=[]
         bitMessage=self.Bitstream.get()
-        ProtocoloFisicaPort=str(self.FisicaPort_item.get())
+        self.ProtocoloFisicaPort=str(self.FisicaPort_item.get())
         Fisica=camadaFisica()
         n=0
-        if ProtocoloFisica == "NRZ-Polar":
+        if self.ProtocoloFisica == "NRZ-Polar":
             wave=Fisica.nrz_polar(bit_stream=bitMessage)
             bitMessage=wave
             n=1
-        elif ProtocoloFisica == "Manchester":
+        elif self.ProtocoloFisica == "Manchester":
             wave=Fisica.manchester(bit_stream=bitMessage)
             bitMessage=wave
-        elif ProtocoloFisica == "Bipolar":
+        elif self.ProtocoloFisica == "Bipolar":
             wave=Fisica.bipolar(bit_stream=bitMessage)
             bitMessage=wave
-        if  ProtocoloFisicaPort == "ASK":
+        if  self.ProtocoloFisicaPort == "ASK":
             wave=Fisica.ask(dig_signal=bitMessage,h=n)
-        elif ProtocoloFisicaPort == "FSK":
+        elif self.ProtocoloFisicaPort == "FSK":
             wave=Fisica.fsk(dig_signal=bitMessage,h=n)
-        elif ProtocoloFisicaPort == "8-QAM":
+        elif self.ProtocoloFisicaPort == "8-QAM":
             wave=Fisica.qam8_modulation(dig_signal=bitMessage)
-        
+        self.decoding_wave=wave
         if wave:
             ##paginacao
             paginacao=self.Screen.get()
@@ -154,10 +159,11 @@ class INTERFACE:
                     newwave.append(wave[(500*paginacao)+i])
             wave=newwave
             newwave=[]
-            
+            #thread1
             for i in range(len(wave)):
                 newwave.append(i+10)
                 newwave.append((wave[i]*100+(self.canvas.winfo_width()/8)))
             wave=newwave
             self.canvas.create_line(wave, fill="blue", width=2,tags="lines")
+            #thread2
 
