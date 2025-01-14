@@ -116,6 +116,8 @@ class camadaFisica:
             dig_signal=sinal
         if len(dig_signal)%3!=0:
             dig_signal=dig_signal+"0"
+        if len(dig_signal)%3!=0:
+            dig_signal=dig_signal+"0"
         symbols=self.qam_mapping(dig_signal)
         signal=[]
         for symbol in symbols:

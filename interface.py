@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 import math
 import threading
-from camada_fisica import camadaFisica
-import decoder
-
+from camadaFisica import camada_fisica
+import decoder_fisica
+import socket
 
 class INTERFACE:
     def __init__(self):
@@ -39,10 +39,30 @@ class INTERFACE:
         self.pagination_button_back=tk.Button(text="<" ,command=self.page_set_back)
         self.sliderErr = tk.Scale(self.root, from_=0, to=100, orient=tk.HORIZONTAL, command=self.update_err)
         self.err_value=tk.DoubleVar()
+        self.decodificador_interface=decoder_fisica.camadaFisicaDecoder()
         self.sliderErr.place(x=int(self.canvas.winfo_width()), y=100) 
         self.draw_center_lines()
         self.draw_sine_wave()
         self.root.mainloop()
+    def string_to_bitstream(self,input_string):
+        """
+        Converte uma string em um bitstream (sequência de bits).
+
+        Parâmetros:
+            input_string (str): A string de entrada para conversão.
+
+        Retorna:
+            str: Uma string representando o bitstream.
+        """
+        try:
+            # Codifica a string em bytes ASCII
+            ascii_bytes = input_string.encode('ascii')
+            # Converte cada byte em uma sequência binária de 8 bits
+            bitstream = ''.join(f'{byte:08b}' for byte in ascii_bytes)
+            return bitstream
+        except UnicodeEncodeError as e:
+            print(f"Erro: A string contém caracteres não ASCII. {e}")
+            raise
     def update_err(self,value):
         """ Update the label with the current slider  """
         self.err_value.set(value)
@@ -66,7 +86,6 @@ class INTERFACE:
     def on_selectEnlace(self,event):
         item=self.CamadaEnlaceSelector.get()
         self.enlace_item.set(str(item))
-        print(self.enlace_item.get())
         self.draw_sine_wave()
     def draw_center_lines(self):
         ##dividindo o canvas em 4
@@ -78,14 +97,9 @@ class INTERFACE:
         self.canvas.create_line(center_x, 0, center_x, canvas_height, fill='black', width=2,tags="center_lines")
 
     def bitstream_set(self):
-        self.Bitstream.set(str(self.Bitstream_textBox.get("1.0", tk.END).strip()))
-        print(self.Bitstream.get())
-        decode=decoder.camadaFisicaDecoder()
-        bites=decode.decode(Protocolos=self.ProtocoloFisicaPort,sinal=self.decoding_wave)
-        bites=decode.decode(Protocolos=self.ProtocoloFisica,sinal=bites)
-        print(bites)
-        self.draw_sine_wave()
-    
+        self.Bitstream.set(self.string_to_bitstream(str(self.Bitstream_textBox.get("1.0", tk.END).strip())))
+        self.Decodificador()
+
     def on_resize(self,event):
         canvas_width =  self.root.winfo_width()
         canvas_height = self.root.winfo_height()
@@ -118,12 +132,18 @@ class INTERFACE:
         self.fisica_item.set(str(item))
         print(self.fisica_item.get())
         self.draw_sine_wave()
-
+        self.Decodificador()
+    def Decodificador(self):
+        bites=self.decodificador_interface.decode(Protocolos=self.ProtocoloFisicaPort,sinal=self.decoding_wave)
+        if self.ProtocoloFisica=="Manchester":
+            bites=self.decodificador_interface.decode(Protocolos=self.ProtocoloFisica,sinal=bites)
+        print(bites)
+        self.draw_sine_wave()
     def on_selectPortadora(self,event):
         item=self.FisicaPortSelector.get()
         self.FisicaPort_item.set(str(item))
-        print(self.FisicaPort_item.get())
         self.draw_sine_wave()
+        self.Decodificador()
     def draw_sine_wave(self):
         self.canvas.delete("lines")
         self.ProtocoloFisica=str(self.fisica_item.get())
@@ -131,8 +151,9 @@ class INTERFACE:
         wave=[]
         bitMessage=self.Bitstream.get()
         self.ProtocoloFisicaPort=str(self.FisicaPort_item.get())
-        Fisica=camadaFisica()
+        Fisica=camada_fisica.camadaFisica()
         n=0
+        
         if self.ProtocoloFisica == "NRZ-Polar":
             wave=Fisica.nrz_polar(bit_stream=bitMessage)
             bitMessage=wave
@@ -159,11 +180,37 @@ class INTERFACE:
                     newwave.append(wave[(500*paginacao)+i])
             wave=newwave
             newwave=[]
-            #thread1
-            for i in range(len(wave)):
-                newwave.append(i+10)
-                newwave.append((wave[i]*100+(self.canvas.winfo_width()/8)))
-            wave=newwave
-            self.canvas.create_line(wave, fill="blue", width=2,tags="lines")
-            #thread2
+                    # Create threads for the methods
+            thread_one = threading.Thread(target=self.draw(wave))
+            thread_two = threading.Thread(target=self.decodificador(wave))
+            # Start the threads
+            thread_one.start()
+            thread_two.start()
+            # Wait for threads to finish
+            thread_one.join()
+            thread_two.join()
+            print("Both threads have finished.")
+    def draw(self,wave):
+        newwave=[]
+        for i in range(len(wave)):
+            newwave.append(i+10)
+            newwave.append((wave[i]*100+(self.canvas.winfo_width()/8)))
+        wave=newwave
+        self.canvas.create_line(wave, fill="blue", width=2,tags="lines")
+    def decodificador(self,wave):
+            # Define server address and port
+        host = '127.0.0.1'  # Localhost
+        port = 65432        # Port to listen on
+        # Create a socket object
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
+            server_socket.bind((host, port))
+            server_socket.listen()
+            print(f"Transmitter is running on {host}:{port}")
+
+            # Accept a connection
+            conn, addr = server_socket.accept()
+            with conn:
+                print(f"Connected by {addr}")
+                encoded_message = wave.encode('utf-8')
+                conn.sendall(encoded_message)
 
